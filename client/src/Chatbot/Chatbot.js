@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { saveMessage } from "../_actions/message_actions";
+import Message from "./Sections/Message";
+import Card from "./Sections/Card";
 import { List, Icon, Avatar } from "antd";
 
 const Chatbot = () => {
@@ -36,13 +38,14 @@ const Chatbot = () => {
         "/api/dialogflow/textQuery",
         textQueryVariables
       );
-      const content = response.data.fulfillmentMessages[0];
+      for (let content of response.data.fulfillmentMessages) {
+        conversation = {
+          who: "bot",
+          content: content,
+        };
 
-      conversation = {
-        who: "bot",
-        content: content,
-      };
-      dispatch(saveMessage(conversation));
+        dispatch(saveMessage(conversation));
+      }
     } catch (error) {
       conversation = {
         who: "bot",
@@ -68,13 +71,15 @@ const Chatbot = () => {
         "/api/dialogflow/eventQuery",
         eventQueryVariables
       );
-      const content = response.data.fulfillmentMessages[0];
 
-      let conversation = {
-        who: "bot",
-        content: content,
-      };
-      dispatch(saveMessage(conversation));
+      for (let content of response.data.fulfillmentMessages) {
+        let conversation = {
+          who: "bot",
+          content: content,
+        };
+
+        dispatch(saveMessage(conversation));
+      }
     } catch (error) {
       let conversation = {
         who: "bot",
@@ -100,16 +105,39 @@ const Chatbot = () => {
     }
   };
 
+  const renderCards = (cards) => {
+    return cards.map((card, i) => <Card key={i} cardInfo={card.structValue} />);
+  };
+
   const renderOneMessage = (message, index) => {
-    return (
-      <List.Item style={{ padding: "1rem" }}>
-        <List.Item.Meta
-          avatar={<Avatar />}
-          title={message.who}
-          description={message.content.text.text}
+    //We need to give some condition here to separate message kinds
+    if (message.content && message.content.text && message.content.text.text) {
+      //template for normal text
+      return (
+        <Message
+          key={index}
+          who={message.who}
+          text={message.content.text.text}
         />
-      </List.Item>
-    );
+      );
+    } else if (message.content && message.content.payload.fields.card) {
+      const AvatarSrc =
+        message.who === "bot" ? <Icon type="robot" /> : <Icon type="smile" />;
+
+      return (
+        <div>
+          <List.Item key={message.key} style={{ padding: "1rem" }}>
+            <List.Item.Meta
+              avatar={<Avatar icon={AvatarSrc} />}
+              title={message.who}
+              description={renderCards(
+                message.content.payload.fields.card.listValue.values
+              )}
+            />
+          </List.Item>
+        </div>
+      );
+    }
   };
 
   const renderMessage = (returnedMessages) => {
