@@ -1,11 +1,8 @@
-import {
-    SAMPLE,
-} from './types';
+import { SAVE_MESSAGE } from "./types";
 
-export function sample(dataToSubmit) {
-   
-    return {
-        type: SAMPLE,
-        payload: dataToSubmit
-    }
+export function saveMessage(dataToSubmit) {
+  return {
+    type: SAVE_MESSAGE,
+    payload: dataToSubmit,
+  };
 }
